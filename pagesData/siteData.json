@@ -1,0 +1,14 @@
+{
+  "student": {
+    "name": "Or Zenaty",
+    "id": "207371758"
+  },
+  "links": {
+    "github": "https://github.com/Zenaty/WebDevCourse_HW_CLIENT",
+    "live": "https://github.com/Zenaty/WebDevCourse_HW_CLIENT"
+  },
+  "pages": {
+    "login": "login.html",
+    "register": "register.html"
+  }
+}
