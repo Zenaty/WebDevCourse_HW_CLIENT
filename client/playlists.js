@@ -2,6 +2,17 @@
 const sessionUser = JSON.parse(sessionStorage.getItem("currentUser"));
 if (!sessionUser) window.location.replace("index.html");
 
+// ===== Header =====
+document.getElementById(
+  "welcomeMsg"
+).innerText = `שלום ${sessionUser.username}`;
+document.getElementById("userImg").src = sessionUser.imageUrl;
+
+document.getElementById("logoutBtn").onclick = () => {
+  sessionStorage.removeItem("currentUser");
+  window.location.replace("index.html");
+};
+
 // ===== Storage helpers =====
 function getUsers() {
   return JSON.parse(localStorage.getItem("users")) || [];
@@ -88,11 +99,7 @@ function renderVideos(list = activePlaylist?.videos) {
 
     col.innerHTML = `
       <div class="card h-100">
-        ${
-          v.videoId
-            ? `<img src="${v.thumb}" class="card-img-top" />`
-            : `<div class="p-3 text-muted small">קובץ מקומי (בחלק A אין העלאה)</div>`
-        }
+        <img src="${v.thumb}" class="card-img-top" />
         <div class="card-body">
           <h6>${escapeHtml(v.title)}</h6>
 
@@ -206,11 +213,6 @@ playPlaylistBtn.onclick = () => {
 
 function playCurrent() {
   const v = activePlaylist.videos[playIndex];
-  if (!v?.videoId) {
-    alert("הפלייליסט מכיל פריטים לא ניתנים לניגון בשלב הזה");
-    return;
-  }
-
   playlistPlayer.src = `https://www.youtube.com/embed/${v.videoId}?autoplay=1`;
 }
 
