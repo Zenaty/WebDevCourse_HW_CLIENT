@@ -12,33 +12,9 @@
   </head>
 
   <body class="bg-light">
-    <!-- ===== Header ===== -->
-    <nav class="navbar navbar-light bg-white shadow-sm mb-3" dir="ltr">
-      <div class="container d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-          <img
-            id="userImg"
-            width="40"
-            height="40"
-            class="rounded-circle"
-            alt="User"
-          />
-          <span id="welcomeMsg" class="fw-bold"></span>
-
-          <a href="search.html" class="btn btn-outline-primary btn-sm ms-3">
-            Search
-          </a>
-        </div>
-
-        <button id="logoutBtn" class="btn btn-outline-secondary btn-sm">
-          Logout
-        </button>
-      </div>
-    </nav>
-
     <div class="container-fluid">
       <div class="row vh-100">
-        <!-- ===== Sidebar (RIGHT) ===== -->
+        <!-- ===== Sidebar ===== -->
         <aside class="col-3 bg-white border-start p-3 d-flex flex-column">
           <h5 class="mb-3">הספרייה שלי</h5>
 
@@ -59,30 +35,32 @@
           ></ul>
         </aside>
 
-        <!-- ===== Main Content (LEFT) ===== -->
+        <!-- ===== Main ===== -->
         <main class="col-9 p-4">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <h4 id="playlistTitle" class="mb-0"></h4>
+          <div class="d-flex justify-content-between mb-3">
+            <h4 id="playlistTitle"></h4>
+            <a href="search.html" class="btn btn-outline-secondary btn-sm">
+              ← חזרה לחיפוש
+            </a>
           </div>
 
           <p id="emptyMsg" class="text-muted">בחר פלייליסט מהרשימה.</p>
 
+          <!-- ===== Controls ===== -->
           <div id="controls" class="d-none mb-3">
             <input
               id="searchInPlaylist"
               class="form-control mb-2"
-              placeholder="חיפוש סרטון בפלייליסט"
+              placeholder="חיפוש בפלייליסט"
             />
 
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 mb-3">
               <button id="sortAZ" class="btn btn-outline-secondary btn-sm">
                 מיון א׳-ב׳
               </button>
-
               <button id="sortRating" class="btn btn-outline-secondary btn-sm">
                 מיון לפי דירוג
               </button>
-
               <button
                 id="deletePlaylist"
                 class="btn btn-outline-danger btn-sm me-auto"
@@ -90,8 +68,22 @@
                 מחיקת פלייליסט
               </button>
             </div>
+
+            <!-- ===== MP3 Upload ===== -->
+            <div class="border rounded p-3">
+              <input
+                type="file"
+                id="mp3Input"
+                accept=".mp3"
+                class="form-control mb-2"
+              />
+              <button id="uploadMp3Btn" class="btn btn-outline-primary btn-sm">
+                העלה קובץ MP3
+              </button>
+            </div>
           </div>
 
+          <!-- Player -->
           <div id="playerContainer" class="d-none mb-3">
             <iframe
               id="playlistPlayer"
@@ -101,23 +93,22 @@
             ></iframe>
           </div>
 
+          <!-- Videos -->
           <div id="videos" class="row g-3"></div>
         </main>
       </div>
     </div>
 
-    <!-- ===== Create Playlist Modal ===== -->
+    <!-- Modal -->
     <div class="modal fade" id="newPlaylistModal">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content p-3">
-          <h5>יצירת פלייליסט חדש</h5>
-
+          <h5>פלייליסט חדש</h5>
           <input
             id="newPlaylistName"
             class="form-control my-2"
             placeholder="שם הפלייליסט"
           />
-
           <button id="createPlaylistBtn" class="btn btn-primary">יצירה</button>
         </div>
       </div>

@@ -1,37 +1,13 @@
 // ===== Guard =====
 const sessionUser = JSON.parse(sessionStorage.getItem("currentUser"));
-if (!sessionUser) window.location.replace("index.html");
-
-// ===== Header =====
-document.getElementById(
-  "welcomeMsg"
-).innerText = `שלום ${sessionUser.username}`;
-document.getElementById("userImg").src = sessionUser.imageUrl;
-
-document.getElementById("logoutBtn").onclick = () => {
-  sessionStorage.removeItem("currentUser");
-  window.location.replace("index.html");
-};
-
-// ===== Storage helpers =====
-function getUsers() {
-  return JSON.parse(localStorage.getItem("users")) || [];
+if (!sessionUser) {
+  window.location.href = "index.html";
 }
-function saveUsers(users) {
-  localStorage.setItem("users", JSON.stringify(users));
-}
-
-// ===== Load user =====
-const users = getUsers();
-const userIndex = users.findIndex((u) => u.id === sessionUser.id);
-if (userIndex === -1) window.location.replace("index.html");
-
-const user = users[userIndex];
-user.playlists ??= [];
 
 // ===== State =====
-let playlists = user.playlists;
+let playlists = [];
 let activePlaylist = null;
+let playIndex = 0;
 
 // ===== DOM =====
 const playlistList = document.getElementById("playlistList");
@@ -44,14 +20,23 @@ const playPlaylistBtn = document.getElementById("playPlaylistBtn");
 const playerContainer = document.getElementById("playerContainer");
 const playlistPlayer = document.getElementById("playlistPlayer");
 
+const mp3Input = document.getElementById("mp3Input");
+const uploadMp3Btn = document.getElementById("uploadMp3Btn");
+
 // ===== Init =====
 init();
 
-function init() {
+async function init() {
+  const res = await fetch(`/api/playlists/${sessionUser.id}`);
+  playlists = await res.json();
+
   const params = new URLSearchParams(window.location.search);
   let playlistId = params.get("playlistId");
 
-  if (!playlistId && playlists.length > 0) playlistId = playlists[0].id;
+  if (!playlistId && playlists.length > 0) {
+    playlistId = playlists[0].id;
+  }
+
   activePlaylist = playlists.find((p) => p.id === playlistId) || null;
 
   renderSidebar();
@@ -68,8 +53,9 @@ function renderSidebar() {
     if (p.id === activePlaylist?.id) li.classList.add("active");
 
     li.innerText = p.name;
-    li.onclick = () =>
-      (window.location.href = `playlists.html?playlistId=${p.id}`);
+    li.onclick = () => {
+      window.location.href = `playlists.html?playlistId=${p.id}`;
+    };
 
     playlistList.appendChild(li);
   });
@@ -87,8 +73,6 @@ function renderVideos(list = activePlaylist?.videos) {
     return;
   }
 
-  activePlaylist.videos ??= [];
-
   emptyMsg.classList.add("d-none");
   controls.classList.remove("d-none");
   playlistTitle.innerText = activePlaylist.name;
@@ -99,9 +83,20 @@ function renderVideos(list = activePlaylist?.videos) {
 
     col.innerHTML = `
       <div class="card h-100">
-        <img src="${v.thumb}" class="card-img-top" />
+        ${
+          v.videoId
+            ? `<img
+                 src="${v.thumb}"
+                 class="card-img-top video-thumb"
+                 style="cursor:pointer"
+                 data-index="${index}"
+               />`
+            : `<audio controls class="w-100">
+                 <source src="${v.filePath}" type="audio/mpeg">
+               </audio>`
+        }
         <div class="card-body">
-          <h6>${escapeHtml(v.title)}</h6>
+          <h6>${v.title}</h6>
 
           <select class="form-select rating mb-2" data-index="${index}">
             <option value="">Rating</option>
@@ -115,7 +110,10 @@ function renderVideos(list = activePlaylist?.videos) {
               .join("")}
           </select>
 
-          <button class="btn btn-danger btn-sm w-100 deleteVideo" data-index="${index}">
+          <button
+            class="btn btn-danger btn-sm w-100 deleteVideo"
+            data-index="${index}"
+          >
             Remove
           </button>
         </div>
@@ -126,56 +124,80 @@ function renderVideos(list = activePlaylist?.videos) {
   });
 }
 
-// ===== Events =====
-videosDiv.onclick = (e) => {
-  if (!e.target.classList.contains("deleteVideo")) return;
+// ===== Events (delegation) =====
+videosDiv.onclick = async (e) => {
+  // מחיקת וידאו
+  if (e.target.classList.contains("deleteVideo")) {
+    const index = e.target.dataset.index;
 
-  const index = Number(e.target.dataset.index);
-  activePlaylist.videos.splice(index, 1);
+    await fetch(
+      `/api/playlists/${sessionUser.id}/${activePlaylist.id}/video/${index}`,
+      { method: "DELETE" }
+    );
 
-  saveAll();
-  renderVideos();
+    activePlaylist.videos.splice(index, 1);
+    renderVideos();
+    return;
+  }
+
+  // ▶ ניגון שיר YouTube בלחיצה
+  if (e.target.classList.contains("video-thumb")) {
+    const index = e.target.dataset.index;
+    const v = activePlaylist.videos[index];
+    if (!v?.videoId) return;
+
+    playIndex = index;
+    playerContainer.classList.remove("d-none");
+    playlistPlayer.src = `https://www.youtube.com/embed/${v.videoId}?autoplay=1`;
+  }
 };
 
-videosDiv.onchange = (e) => {
+// דירוג
+videosDiv.onchange = async (e) => {
   if (!e.target.classList.contains("rating")) return;
 
-  const index = Number(e.target.dataset.index);
+  const index = e.target.dataset.index;
   activePlaylist.videos[index].rating = Number(e.target.value);
 
-  saveAll();
+  await fetch(
+    `/api/playlists/${sessionUser.id}/${activePlaylist.id}/video/${index}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rating: activePlaylist.videos[index].rating }),
+    }
+  );
 };
 
-// ===== Search inside playlist =====
-searchInPlaylist.oninput = (e) => {
-  const q = e.target.value.toLowerCase();
+// חיפוש
+searchInPlaylist.oninput = () => {
+  if (!activePlaylist) return;
+  const q = searchInPlaylist.value.toLowerCase();
   const filtered = activePlaylist.videos.filter((v) =>
     v.title.toLowerCase().includes(q)
   );
   renderVideos(filtered);
 };
 
-// ===== Sorting =====
+// מיון
 document.getElementById("sortAZ").onclick = () => {
   activePlaylist.videos.sort((a, b) => a.title.localeCompare(b.title));
-  saveAll();
   renderVideos();
 };
 
 document.getElementById("sortRating").onclick = () => {
   activePlaylist.videos.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  saveAll();
   renderVideos();
 };
 
-// ===== Delete playlist =====
-document.getElementById("deletePlaylist").onclick = () => {
+// מחיקת פלייליסט
+document.getElementById("deletePlaylist").onclick = async () => {
   if (!confirm("Delete playlist?")) return;
 
-  user.playlists = user.playlists.filter((p) => p.id !== activePlaylist.id);
-  playlists = user.playlists;
+  await fetch(`/api/playlists/${sessionUser.id}/${activePlaylist.id}`, {
+    method: "DELETE",
+  });
 
-  saveAll();
   window.location.href = "playlists.html";
 };
 
@@ -184,22 +206,21 @@ const modal = new bootstrap.Modal(document.getElementById("newPlaylistModal"));
 
 document.getElementById("newPlaylistBtn").onclick = () => modal.show();
 
-document.getElementById("createPlaylistBtn").onclick = () => {
+document.getElementById("createPlaylistBtn").onclick = async () => {
   const name = document.getElementById("newPlaylistName").value.trim();
   if (!name) return;
 
-  const newPlaylist = { id: crypto.randomUUID(), name, videos: [] };
-  user.playlists.push(newPlaylist);
+  const res = await fetch(`/api/playlists/${sessionUser.id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
 
-  saveAll();
-  modal.hide();
-
-  window.location.href = `playlists.html?playlistId=${newPlaylist.id}`;
+  const playlist = await res.json();
+  window.location.href = `playlists.html?playlistId=${playlist.id}`;
 };
 
-// ===== Play Playlist =====
-let playIndex = 0;
-
+// ===== Play full playlist =====
 playPlaylistBtn.onclick = () => {
   if (!activePlaylist || activePlaylist.videos.length === 0) {
     alert("אין סרטונים בפלייליסט");
@@ -213,20 +234,41 @@ playPlaylistBtn.onclick = () => {
 
 function playCurrent() {
   const v = activePlaylist.videos[playIndex];
+  if (!v?.videoId) return;
+
   playlistPlayer.src = `https://www.youtube.com/embed/${v.videoId}?autoplay=1`;
 }
 
-// ===== Save =====
-function saveAll() {
-  users[userIndex] = user;
-  saveUsers(users);
-}
+// ===== MP3 Upload =====
+uploadMp3Btn.onclick = async () => {
+  if (!activePlaylist) {
+    alert("בחר פלייליסט קודם");
+    return;
+  }
 
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+  const file = mp3Input.files[0];
+  if (!file) {
+    alert("בחר קובץ MP3");
+    return;
+  }
+
+  if (!file.name.toLowerCase().endsWith(".mp3")) {
+    alert("רק קבצי MP3 מותרים");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  await fetch(`/api/playlists/${sessionUser.id}/${activePlaylist.id}/mp3`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const res = await fetch(`/api/playlists/${sessionUser.id}`);
+  playlists = await res.json();
+  activePlaylist = playlists.find((p) => p.id === activePlaylist.id);
+
+  mp3Input.value = "";
+  renderVideos();
+};
