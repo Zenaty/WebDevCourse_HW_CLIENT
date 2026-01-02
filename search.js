@@ -91,7 +91,7 @@ const favToast = new bootstrap.Toast(document.getElementById("favToast"));
 // =====================
 // YouTube
 // =====================
-const API_KEY = "AIzaSyBEQ4678To2KttgMLu-WqBnJqVqpE9syiE";
+export const API_KEY = "AIzaSyCdQ0Hmr7Q8guSY3FUVMfCRiKP8vV_ub40";
 const MAX_RESULTS = 6;
 
 // =====================
