@@ -52,6 +52,7 @@ let playlists = user.playlists;
 let activePlaylist = null;
 let playIndex = 0;
 let ytPlayer = null;
+let pendingPlay = false; // ⭐ FIX
 
 // =====================
 // DOM
@@ -175,7 +176,6 @@ function renderVideos(list = activePlaylist?.videos) {
 // Events
 // =====================
 videosDiv.onclick = (e) => {
-  // ▶ ניגון (תמונה או כפתור)
   if (
     e.target.classList.contains("video-thumb") ||
     e.target.classList.contains("playVideoBtn")
@@ -186,7 +186,6 @@ videosDiv.onclick = (e) => {
     return;
   }
 
-  // מחיקה
   if (e.target.classList.contains("deleteVideo")) {
     const index = Number(e.target.dataset.index);
     activePlaylist.videos.splice(index, 1);
@@ -195,7 +194,6 @@ videosDiv.onclick = (e) => {
   }
 };
 
-// דירוג
 videosDiv.onchange = (e) => {
   if (!e.target.classList.contains("rating")) return;
 
@@ -204,7 +202,7 @@ videosDiv.onchange = (e) => {
   saveAll();
 };
 
-// חיפוש בפלייליסט
+// חיפוש
 searchInPlaylist.oninput = (e) => {
   const q = e.target.value.toLowerCase();
   renderVideos(
@@ -255,7 +253,7 @@ document.getElementById("createPlaylistBtn").onclick = () => {
 };
 
 // =====================
-// ▶ Play full playlist (AUTO)
+// ▶ Play full playlist
 // =====================
 playPlaylistBtn.onclick = () => {
   if (!activePlaylist || activePlaylist.videos.length === 0) {
@@ -271,16 +269,30 @@ playPlaylistBtn.onclick = () => {
 // =====================
 // YouTube IFrame API
 // =====================
-function onYouTubeIframeAPIReady() {
+window.onYouTubeIframeAPIReady = function () {
+  // ⭐ FIX: לוודא שהנגן גלוי בזמן יצירה
+  playerContainer.classList.remove("d-none");
+
   ytPlayer = new YT.Player("playlistPlayer", {
     height: "360",
     width: "100%",
     playerVars: { autoplay: 1 },
     events: {
       onStateChange: onPlayerStateChange,
+      onReady: () => {
+        if (pendingPlay) {
+          pendingPlay = false;
+          playCurrent();
+        }
+      },
     },
   });
-}
+
+  // אם לא מנגנים כרגע – להסתיר חזרה
+  if (!pendingPlay) {
+    playerContainer.classList.add("d-none");
+  }
+};
 
 function onPlayerStateChange(event) {
   if (event.data === YT.PlayerState.ENDED) {
@@ -296,7 +308,12 @@ function onPlayerStateChange(event) {
 
 function playCurrent() {
   const v = activePlaylist.videos[playIndex];
-  if (!v || !v.videoId || !ytPlayer) return;
+  if (!v || !v.videoId) return;
+
+  if (!ytPlayer) {
+    pendingPlay = true; // ⭐ FIX
+    return;
+  }
 
   ytPlayer.loadVideoById(v.videoId);
 }
