@@ -94,43 +94,54 @@ function renderVideos(list = activePlaylist?.videos) {
     col.className = "col-md-4";
 
     col.innerHTML = `
-      <div class="card h-100">
+    <div class="card h-100">
+      ${
+        v.videoId
+          ? `<img
+              src="${v.thumb}"
+              class="card-img-top video-thumb"
+              style="cursor:pointer"
+              data-index="${index}"
+            />`
+          : `<audio controls class="w-100">
+              <source src="${v.filePath}" type="audio/mpeg">
+            </audio>`
+      }
+      <div class="card-body">
+        <h6>${v.title}</h6>
+
         ${
           v.videoId
-            ? `<img
-                 src="${v.thumb}"
-                 class="card-img-top video-thumb"
-                 style="cursor:pointer"
-                 data-index="${index}"
-               />`
-            : `<audio controls class="w-100">
-                 <source src="${v.filePath}" type="audio/mpeg">
-               </audio>`
+            ? `<button
+                class="btn btn-success btn-sm w-100 playVideoBtn mb-2"
+                data-index="${index}"
+              >
+                ▶ נגן
+              </button>`
+            : ``
         }
-        <div class="card-body">
-          <h6>${v.title}</h6>
 
-          <select class="form-select rating mb-2" data-index="${index}">
-            <option value="">Rating</option>
-            ${[1, 2, 3, 4, 5]
-              .map(
-                (r) =>
-                  `<option value="${r}" ${
-                    v.rating == r ? "selected" : ""
-                  }>${r}</option>`
-              )
-              .join("")}
-          </select>
+        <select class="form-select rating mb-2" data-index="${index}">
+          <option value="">Rating</option>
+          ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            .map(
+              (r) =>
+                `<option value="${r}" ${
+                  v.rating == r ? "selected" : ""
+                }>${r}</option>`
+            )
+            .join("")}
+        </select>
 
-          <button
-            class="btn btn-danger btn-sm w-100 deleteVideo"
-            data-index="${index}"
-          >
-            Remove
-          </button>
-        </div>
+        <button
+          class="btn btn-danger btn-sm w-100 deleteVideo"
+          data-index="${index}"
+        >
+          Remove
+        </button>
       </div>
-    `;
+    </div>
+  `;
 
     videosDiv.appendChild(col);
   });
@@ -155,7 +166,10 @@ videosDiv.onclick = async (e) => {
   }
 
   // ▶ ניגון בלחיצה
-  if (e.target.classList.contains("video-thumb")) {
+  if (
+    e.target.classList.contains("video-thumb") ||
+    e.target.classList.contains("playVideoBtn")
+  ) {
     playIndex = Number(e.target.dataset.index);
     playCurrent();
   }
