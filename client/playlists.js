@@ -2,9 +2,7 @@
 // Guard
 // =====================
 const sessionUser = JSON.parse(sessionStorage.getItem("currentUser"));
-if (!sessionUser) {
-  window.location.replace("index.html");
-}
+if (!sessionUser) window.location.replace("index.html");
 
 // =====================
 // State
@@ -12,7 +10,9 @@ if (!sessionUser) {
 let playlists = [];
 let activePlaylist = null;
 let playIndex = 0;
+
 let ytPlayer = null;
+let audioPlayer = null;
 
 // =====================
 // DOM
@@ -94,64 +94,50 @@ function renderVideos(list = activePlaylist?.videos) {
     col.className = "col-md-4";
 
     col.innerHTML = `
-    <div class="card h-100">
-      ${
-        v.videoId
-          ? `<img
-              src="${v.thumb}"
-              class="card-img-top video-thumb"
-              style="cursor:pointer"
-              data-index="${index}"
-            />`
-          : `<audio controls class="w-100">
-              <source src="${v.filePath}" type="audio/mpeg">
-            </audio>`
-      }
-      <div class="card-body">
-        <h6>${v.title}</h6>
-
+      <div class="card h-100">
         ${
           v.videoId
-            ? `<button
-                class="btn btn-success btn-sm w-100 playVideoBtn mb-2"
-                data-index="${index}"
-              >
-                ▶ נגן
-              </button>`
-            : ``
+            ? `<img src="${v.thumb}" class="card-img-top video-thumb" style="cursor:pointer" data-index="${index}" />`
+            : `<audio controls class="w-100">
+                <source src="${v.filePath}" type="audio/mpeg">
+              </audio>`
         }
+        <div class="card-body">
+          <h6>${v.title}</h6>
 
-        <select class="form-select rating mb-2" data-index="${index}">
-          <option value="">Rating</option>
-          ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-            .map(
-              (r) =>
-                `<option value="${r}" ${
-                  v.rating == r ? "selected" : ""
-                }>${r}</option>`
-            )
-            .join("")}
-        </select>
+          ${
+            v.videoId
+              ? `<button class="btn btn-success btn-sm w-100 playVideoBtn mb-2" data-index="${index}">▶ נגן</button>`
+              : ""
+          }
 
-        <button
-          class="btn btn-danger btn-sm w-100 deleteVideo"
-          data-index="${index}"
-        >
-          Remove
-        </button>
+          <select class="form-select rating mb-2" data-index="${index}">
+            <option value="">Rating</option>
+            ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+              .map(
+                (r) =>
+                  `<option value="${r}" ${
+                    v.rating == r ? "selected" : ""
+                  }>${r}</option>`
+              )
+              .join("")}
+          </select>
+
+          <button class="btn btn-danger btn-sm w-100 deleteVideo" data-index="${index}">
+            Remove
+          </button>
+        </div>
       </div>
-    </div>
-  `;
+    `;
 
     videosDiv.appendChild(col);
   });
 }
 
 // =====================
-// Events (delegation)
+// Event delegation
 // =====================
 videosDiv.onclick = async (e) => {
-  // מחיקה
   if (e.target.classList.contains("deleteVideo")) {
     const index = e.target.dataset.index;
 
@@ -165,7 +151,6 @@ videosDiv.onclick = async (e) => {
     return;
   }
 
-  // ▶ ניגון בלחיצה
   if (
     e.target.classList.contains("video-thumb") ||
     e.target.classList.contains("playVideoBtn")
@@ -175,7 +160,6 @@ videosDiv.onclick = async (e) => {
   }
 };
 
-// דירוג
 videosDiv.onchange = async (e) => {
   if (!e.target.classList.contains("rating")) return;
 
@@ -192,7 +176,9 @@ videosDiv.onchange = async (e) => {
   );
 };
 
-// חיפוש
+// =====================
+// Search & sort
+// =====================
 searchInPlaylist.oninput = () => {
   if (!activePlaylist) return;
   const q = searchInPlaylist.value.toLowerCase();
@@ -201,7 +187,6 @@ searchInPlaylist.oninput = () => {
   );
 };
 
-// מיון
 document.getElementById("sortAZ").onclick = () => {
   activePlaylist.videos.sort((a, b) => a.title.localeCompare(b.title));
   renderVideos();
@@ -212,44 +197,12 @@ document.getElementById("sortRating").onclick = () => {
   renderVideos();
 };
 
-// מחיקת פלייליסט
-document.getElementById("deletePlaylist").onclick = async () => {
-  if (!confirm("Delete playlist?")) return;
-
-  await fetch(`/api/playlists/${sessionUser.id}/${activePlaylist.id}`, {
-    method: "DELETE",
-  });
-
-  window.location.href = "playlists.html";
-};
-
 // =====================
-// Create playlist
-// =====================
-const modal = new bootstrap.Modal(document.getElementById("newPlaylistModal"));
-
-document.getElementById("newPlaylistBtn").onclick = () => modal.show();
-
-document.getElementById("createPlaylistBtn").onclick = async () => {
-  const name = document.getElementById("newPlaylistName").value.trim();
-  if (!name) return;
-
-  const res = await fetch(`/api/playlists/${sessionUser.id}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
-  });
-
-  const playlist = await res.json();
-  window.location.href = `playlists.html?playlistId=${playlist.id}`;
-};
-
-// =====================
-// ▶ Play full playlist
+// Play full playlist
 // =====================
 playPlaylistBtn.onclick = () => {
   if (!activePlaylist || activePlaylist.videos.length === 0) {
-    alert("אין סרטונים בפלייליסט");
+    alert("אין פריטים בפלייליסט");
     return;
   }
 
@@ -263,13 +216,11 @@ playPlaylistBtn.onclick = () => {
 function onYouTubeIframeAPIReady() {
   ytPlayer = new YT.Player("playlistPlayer", {
     playerVars: { autoplay: 1 },
-    events: {
-      onStateChange: onPlayerStateChange,
-    },
+    events: { onStateChange },
   });
 }
 
-function onPlayerStateChange(event) {
+function onStateChange(event) {
   if (event.data === YT.PlayerState.ENDED) {
     playIndex++;
     if (playIndex < activePlaylist.videos.length) {
@@ -281,12 +232,50 @@ function onPlayerStateChange(event) {
   }
 }
 
+// =====================
+// Audio (MP3)
+// =====================
+function initAudioPlayer() {
+  if (audioPlayer) return;
+
+  audioPlayer = new Audio();
+  audioPlayer.onended = () => {
+    playIndex++;
+    if (playIndex < activePlaylist.videos.length) {
+      playCurrent();
+    } else {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      playIndex = 0;
+    }
+  };
+}
+
+// =====================
+// Core playback logic
+// =====================
 function playCurrent() {
   const v = activePlaylist.videos[playIndex];
-  if (!v || !v.videoId || !ytPlayer) return;
+  if (!v) return;
 
-  playerContainer.classList.remove("d-none");
-  ytPlayer.loadVideoById(v.videoId);
+  // MP3
+  if (v.filePath) {
+    initAudioPlayer();
+    if (ytPlayer) ytPlayer.stopVideo();
+
+    playerContainer.classList.add("d-none");
+    audioPlayer.src = v.filePath;
+    audioPlayer.play();
+    return;
+  }
+
+  // YouTube
+  if (v.videoId && ytPlayer) {
+    if (audioPlayer) audioPlayer.pause();
+
+    playerContainer.classList.remove("d-none");
+    ytPlayer.loadVideoById(v.videoId);
+  }
 }
 
 // =====================

@@ -1,1 +1,28 @@
-[]
+[
+  {
+    "id": "e50e1389-96e2-4996-a939-23f1de721041",
+    "username": "OrZenaty13",
+    "password": "123456a!",
+    "firstName": "Or",
+    "imageUrl": "https://www.google.com/",
+    "playlists": [
+      {
+        "id": "a6953f9d-fac9-4e7f-a966-8d73fd142f57",
+        "name": "Sonic",
+        "videos": [
+          {
+            "videoId": "YQ8qcoGEg4k",
+            "title": "Everytime Sonic gotta go FAST (Sonic + Sonic 2 Best Scenes) ⚡ 4K",
+            "thumb": "https://i.ytimg.com/vi/YQ8qcoGEg4k/mqdefault.jpg",
+            "rating": null
+          },
+          {
+            "title": "Avicii - Wake Me Up (Lyrics).mp3",
+            "type": "mp3",
+            "filePath": "/uploads/6f718987e3bbd53fe8b992c1aea2082a"
+          }
+        ]
+      }
+    ]
+  }
+]
