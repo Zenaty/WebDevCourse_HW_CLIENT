@@ -36,7 +36,7 @@ const saveToPlaylistBtn = document.getElementById("saveToPlaylistBtn");
 const favToast = new bootstrap.Toast(document.getElementById("favToast"));
 
 // ===== YouTube =====
-const API_KEY = "AIzaSyBEQ4678To2KttgMLu-WqBnJqVqpE9syiE";
+import { API_KEY } from "./apiKey.js";
 const MAX_RESULTS = 6;
 
 // ===== State =====
