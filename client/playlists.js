@@ -1,15 +1,22 @@
-// ===== Guard =====
+// =====================
+// Guard
+// =====================
 const sessionUser = JSON.parse(sessionStorage.getItem("currentUser"));
 if (!sessionUser) {
-  window.location.href = "index.html";
+  window.location.replace("index.html");
 }
 
-// ===== State =====
+// =====================
+// State
+// =====================
 let playlists = [];
 let activePlaylist = null;
 let playIndex = 0;
+let ytPlayer = null;
 
-// ===== DOM =====
+// =====================
+// DOM
+// =====================
 const playlistList = document.getElementById("playlistList");
 const playlistTitle = document.getElementById("playlistTitle");
 const videosDiv = document.getElementById("videos");
@@ -18,12 +25,13 @@ const controls = document.getElementById("controls");
 const searchInPlaylist = document.getElementById("searchInPlaylist");
 const playPlaylistBtn = document.getElementById("playPlaylistBtn");
 const playerContainer = document.getElementById("playerContainer");
-const playlistPlayer = document.getElementById("playlistPlayer");
 
 const mp3Input = document.getElementById("mp3Input");
 const uploadMp3Btn = document.getElementById("uploadMp3Btn");
 
-// ===== Init =====
+// =====================
+// Init
+// =====================
 init();
 
 async function init() {
@@ -43,7 +51,9 @@ async function init() {
   renderVideos();
 }
 
-// ===== Sidebar =====
+// =====================
+// Sidebar
+// =====================
 function renderSidebar() {
   playlistList.innerHTML = "";
 
@@ -61,7 +71,9 @@ function renderSidebar() {
   });
 }
 
-// ===== Videos =====
+// =====================
+// Videos
+// =====================
 function renderVideos(list = activePlaylist?.videos) {
   videosDiv.innerHTML = "";
 
@@ -124,9 +136,11 @@ function renderVideos(list = activePlaylist?.videos) {
   });
 }
 
-// ===== Events (delegation) =====
+// =====================
+// Events (delegation)
+// =====================
 videosDiv.onclick = async (e) => {
-  // מחיקת וידאו
+  // מחיקה
   if (e.target.classList.contains("deleteVideo")) {
     const index = e.target.dataset.index;
 
@@ -140,15 +154,10 @@ videosDiv.onclick = async (e) => {
     return;
   }
 
-  // ▶ ניגון שיר YouTube בלחיצה
+  // ▶ ניגון בלחיצה
   if (e.target.classList.contains("video-thumb")) {
-    const index = e.target.dataset.index;
-    const v = activePlaylist.videos[index];
-    if (!v?.videoId) return;
-
-    playIndex = index;
-    playerContainer.classList.remove("d-none");
-    playlistPlayer.src = `https://www.youtube.com/embed/${v.videoId}?autoplay=1`;
+    playIndex = Number(e.target.dataset.index);
+    playCurrent();
   }
 };
 
@@ -173,10 +182,9 @@ videosDiv.onchange = async (e) => {
 searchInPlaylist.oninput = () => {
   if (!activePlaylist) return;
   const q = searchInPlaylist.value.toLowerCase();
-  const filtered = activePlaylist.videos.filter((v) =>
-    v.title.toLowerCase().includes(q)
+  renderVideos(
+    activePlaylist.videos.filter((v) => v.title.toLowerCase().includes(q))
   );
-  renderVideos(filtered);
 };
 
 // מיון
@@ -201,7 +209,9 @@ document.getElementById("deletePlaylist").onclick = async () => {
   window.location.href = "playlists.html";
 };
 
-// ===== Create playlist =====
+// =====================
+// Create playlist
+// =====================
 const modal = new bootstrap.Modal(document.getElementById("newPlaylistModal"));
 
 document.getElementById("newPlaylistBtn").onclick = () => modal.show();
@@ -220,7 +230,9 @@ document.getElementById("createPlaylistBtn").onclick = async () => {
   window.location.href = `playlists.html?playlistId=${playlist.id}`;
 };
 
-// ===== Play full playlist =====
+// =====================
+// ▶ Play full playlist
+// =====================
 playPlaylistBtn.onclick = () => {
   if (!activePlaylist || activePlaylist.videos.length === 0) {
     alert("אין סרטונים בפלייליסט");
@@ -228,18 +240,44 @@ playPlaylistBtn.onclick = () => {
   }
 
   playIndex = 0;
-  playerContainer.classList.remove("d-none");
   playCurrent();
 };
 
-function playCurrent() {
-  const v = activePlaylist.videos[playIndex];
-  if (!v?.videoId) return;
-
-  playlistPlayer.src = `https://www.youtube.com/embed/${v.videoId}?autoplay=1`;
+// =====================
+// YouTube IFrame API
+// =====================
+function onYouTubeIframeAPIReady() {
+  ytPlayer = new YT.Player("playlistPlayer", {
+    playerVars: { autoplay: 1 },
+    events: {
+      onStateChange: onPlayerStateChange,
+    },
+  });
 }
 
-// ===== MP3 Upload =====
+function onPlayerStateChange(event) {
+  if (event.data === YT.PlayerState.ENDED) {
+    playIndex++;
+    if (playIndex < activePlaylist.videos.length) {
+      playCurrent();
+    } else {
+      playerContainer.classList.add("d-none");
+      playIndex = 0;
+    }
+  }
+}
+
+function playCurrent() {
+  const v = activePlaylist.videos[playIndex];
+  if (!v || !v.videoId || !ytPlayer) return;
+
+  playerContainer.classList.remove("d-none");
+  ytPlayer.loadVideoById(v.videoId);
+}
+
+// =====================
+// MP3 Upload
+// =====================
 uploadMp3Btn.onclick = async () => {
   if (!activePlaylist) {
     alert("בחר פלייליסט קודם");
@@ -247,13 +285,8 @@ uploadMp3Btn.onclick = async () => {
   }
 
   const file = mp3Input.files[0];
-  if (!file) {
+  if (!file || !file.name.toLowerCase().endsWith(".mp3")) {
     alert("בחר קובץ MP3");
-    return;
-  }
-
-  if (!file.name.toLowerCase().endsWith(".mp3")) {
-    alert("רק קבצי MP3 מותרים");
     return;
   }
 
