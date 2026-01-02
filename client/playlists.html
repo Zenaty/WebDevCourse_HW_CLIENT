@@ -12,6 +12,30 @@
   </head>
 
   <body class="bg-light">
+    <!-- ===== Header ===== -->
+    <nav class="navbar navbar-light bg-white shadow-sm mb-3" dir="ltr">
+      <div class="container d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <img
+            id="userImg"
+            width="40"
+            height="40"
+            class="rounded-circle"
+            alt="User"
+          />
+          <span id="welcomeMsg" class="fw-bold"></span>
+
+          <a href="search.html" class="btn btn-outline-primary btn-sm ms-3">
+            Search
+          </a>
+        </div>
+
+        <button id="logoutBtn" class="btn btn-outline-secondary btn-sm">
+          Logout
+        </button>
+      </div>
+    </nav>
+
     <div class="container-fluid">
       <div class="row vh-100">
         <!-- ===== Sidebar ===== -->
@@ -37,12 +61,7 @@
 
         <!-- ===== Main ===== -->
         <main class="col-9 p-4">
-          <div class="d-flex justify-content-between mb-3">
-            <h4 id="playlistTitle"></h4>
-            <a href="search.html" class="btn btn-outline-secondary btn-sm">
-              ← חזרה לחיפוש
-            </a>
-          </div>
+          <h4 id="playlistTitle" class="mb-3"></h4>
 
           <p id="emptyMsg" class="text-muted">בחר פלייליסט מהרשימה.</p>
 
@@ -83,7 +102,7 @@
             </div>
           </div>
 
-          <!-- Player -->
+          <!-- ===== Player ===== -->
           <div id="playerContainer" class="d-none mb-3">
             <div
               id="playlistPlayer"
@@ -93,13 +112,13 @@
             ></div>
           </div>
 
-          <!-- Videos -->
+          <!-- ===== Videos ===== -->
           <div id="videos" class="row g-3"></div>
         </main>
       </div>
     </div>
 
-    <!-- Modal -->
+    <!-- ===== Create Playlist Modal ===== -->
     <div class="modal fade" id="newPlaylistModal">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content p-3">
