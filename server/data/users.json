@@ -7,14 +7,65 @@
     "imageUrl": "https://www.google.com/",
     "playlists": [
       {
-        "id": "a6953f9d-fac9-4e7f-a966-8d73fd142f57",
-        "name": "Sonic",
+        "id": "fcfbbbb5-bac9-40c5-8281-8939216f6266",
+        "name": "Songs",
         "videos": [
           {
-            "videoId": "YQ8qcoGEg4k",
-            "title": "Everytime Sonic gotta go FAST (Sonic + Sonic 2 Best Scenes) ⚡ 4K",
-            "thumb": "https://i.ytimg.com/vi/YQ8qcoGEg4k/mqdefault.jpg",
+            "title": "Avicii - Wake Me Up (Lyrics).mp3",
+            "type": "mp3",
+            "filePath": "/uploads/b561b0ac4ebe3833f686d2e9b917a35c"
+          },
+          {
+            "videoId": "IcrbM1l_BoI",
+            "title": "Avicii - Wake Me Up (Official Video)",
+            "thumb": "https://i.ytimg.com/vi/IcrbM1l_BoI/mqdefault.jpg",
             "rating": null
+          },
+          {
+            "videoId": "lZ5cv00uUw8",
+            "title": "Wake Me Up",
+            "thumb": "https://i.ytimg.com/vi/lZ5cv00uUw8/mqdefault.jpg",
+            "rating": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "918d73b3-2ab1-4648-890d-7e22ae4cd396",
+    "username": "OrZenaty12343",
+    "password": "123456a!",
+    "firstName": "Or",
+    "imageUrl": "https://www.google.com/",
+    "playlists": []
+  },
+  {
+    "id": "fe6aa79d-0b2b-4ffe-b450-1304044ef364",
+    "username": "OrZenaty11",
+    "password": "123456a!",
+    "firstName": "Or",
+    "imageUrl": "https://www.google.com/",
+    "playlists": [
+      {
+        "id": "6e153dd9-25bd-468b-a6cc-b771ff744cd5",
+        "name": "Songs",
+        "videos": [
+          {
+            "videoId": "IcrbM1l_BoI",
+            "title": "Avicii - Wake Me Up (Official Video)",
+            "thumb": "https://i.ytimg.com/vi/IcrbM1l_BoI/mqdefault.jpg",
+            "rating": null
+          },
+          {
+            "videoId": "5y_KJAg8bHI",
+            "title": "Avicii - Wake Me Up (Official Lyric Video)",
+            "thumb": "https://i.ytimg.com/vi/5y_KJAg8bHI/mqdefault.jpg",
+            "rating": null
+          },
+          {
+            "title": "Avicii - Wake Me Up (Lyrics).mp3",
+            "type": "mp3",
+            "filePath": "/uploads/007682795336a2064a9c8669247025e5"
           }
         ]
       }

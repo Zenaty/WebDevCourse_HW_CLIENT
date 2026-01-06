@@ -1,8 +1,21 @@
 // =====================
-// Guard
+// Guard + Header
 // =====================
 const sessionUser = JSON.parse(sessionStorage.getItem("currentUser"));
-if (!sessionUser) window.location.replace("index.html");
+if (!sessionUser) {
+  window.location.replace("index.html");
+} else {
+  // הוסף את שתי השורות האלו כאן:
+  document.getElementById("userImg").src = sessionUser.imageUrl;
+  document.getElementById(
+    "welcomeMsg"
+  ).innerText = `שלום ${sessionUser.username}`;
+}
+
+document.getElementById("logoutBtn").onclick = () => {
+  sessionStorage.removeItem("currentUser");
+  window.location.replace("index.html");
+};
 
 // =====================
 // State
@@ -12,7 +25,6 @@ let activePlaylist = null;
 let playIndex = 0;
 
 let ytPlayer = null;
-let audioPlayer = null;
 
 // =====================
 // DOM
@@ -26,6 +38,7 @@ const searchInPlaylist = document.getElementById("searchInPlaylist");
 const playPlaylistBtn = document.getElementById("playPlaylistBtn");
 const playerContainer = document.getElementById("playerContainer");
 
+const audioVisualizer = document.getElementById("audioVisualizer");
 const mp3Input = document.getElementById("mp3Input");
 const uploadMp3Btn = document.getElementById("uploadMp3Btn");
 
@@ -233,47 +246,42 @@ function onStateChange(event) {
 }
 
 // =====================
-// Audio (MP3)
-// =====================
-function initAudioPlayer() {
-  if (audioPlayer) return;
-
-  audioPlayer = new Audio();
-  audioPlayer.onended = () => {
-    playIndex++;
-    if (playIndex < activePlaylist.videos.length) {
-      playCurrent();
-    } else {
-      audioPlayer.pause();
-      audioPlayer.currentTime = 0;
-      playIndex = 0;
-    }
-  };
-}
-
-// =====================
 // Core playback logic
 // =====================
 function playCurrent() {
   const v = activePlaylist.videos[playIndex];
   if (!v) return;
 
-  // MP3
+  playerContainer.classList.remove("d-none");
+
+  // ===== MP3 =====
   if (v.filePath) {
-    initAudioPlayer();
+    // עצירת יוטיוב אם קיים
     if (ytPlayer) ytPlayer.stopVideo();
 
-    playerContainer.classList.add("d-none");
-    audioPlayer.src = v.filePath;
-    audioPlayer.play();
+    audioVisualizer.src = v.filePath;
+    audioVisualizer.play();
+
+    audioVisualizer.onended = () => {
+      playIndex++;
+      if (playIndex < activePlaylist.videos.length) {
+        playCurrent();
+      } else {
+        audioVisualizer.pause();
+        audioVisualizer.currentTime = 0;
+        playerContainer.classList.add("d-none");
+        playIndex = 0;
+      }
+    };
+
     return;
   }
 
-  // YouTube
+  // ===== YouTube =====
   if (v.videoId && ytPlayer) {
-    if (audioPlayer) audioPlayer.pause();
+    audioVisualizer.pause();
+    audioVisualizer.src = "";
 
-    playerContainer.classList.remove("d-none");
     ytPlayer.loadVideoById(v.videoId);
   }
 }
@@ -307,4 +315,66 @@ uploadMp3Btn.onclick = async () => {
 
   mp3Input.value = "";
   renderVideos();
+};
+
+// =====================
+// Delete playlist
+// =====================
+document.getElementById("deletePlaylist").onclick = async () => {
+  if (!activePlaylist) return;
+
+  const ok = confirm("Delete Playlist?");
+  if (!ok) return;
+
+  await fetch(`/api/playlists/${sessionUser.id}/${activePlaylist.id}`, {
+    method: "DELETE",
+  });
+
+  playlists = playlists.filter((p) => p.id !== activePlaylist.id);
+
+  if (playlists.length > 0) {
+    activePlaylist = playlists[0];
+    window.location.href = `playlists.html?playlistId=${activePlaylist.id}`;
+  } else {
+    activePlaylist = null;
+    window.location.href = "playlists.html";
+  }
+};
+
+// =====================
+// Create new playlist
+// =====================
+const newPlaylistBtn = document.getElementById("newPlaylistBtn");
+const newPlaylistModalEl = document.getElementById("newPlaylistModal");
+const newPlaylistModal = new bootstrap.Modal(newPlaylistModalEl);
+const newPlaylistNameInput = document.getElementById("newPlaylistName");
+const createPlaylistBtn = document.getElementById("createPlaylistBtn");
+
+// פתיחת מודל
+newPlaylistBtn.onclick = () => {
+  newPlaylistNameInput.value = "";
+  newPlaylistModal.show();
+};
+
+// יצירת פלייליסט
+createPlaylistBtn.onclick = async () => {
+  const name = newPlaylistNameInput.value.trim();
+  if (!name) {
+    alert("הכנס שם לפלייליסט");
+    return;
+  }
+
+  const res = await fetch(`/api/playlists/${sessionUser.id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+
+  const newPlaylist = await res.json();
+
+  playlists.push(newPlaylist);
+  activePlaylist = newPlaylist;
+
+  newPlaylistModal.hide();
+  window.location.href = `playlists.html?playlistId=${newPlaylist.id}`;
 };

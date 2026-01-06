@@ -78,9 +78,24 @@ searchInput.onkeydown = (e) => {
   if (e.key === "Enter") triggerSearch();
 };
 
+// ===== QueryString INIT =====
+const params = new URLSearchParams(window.location.search);
+const initialQuery = params.get("q");
+
+if (initialQuery) {
+  searchInput.value = initialQuery;
+  searchYouTube(initialQuery);
+}
+
+// ===== Search Trigger =====
 function triggerSearch() {
   const q = searchInput.value.trim();
   if (!q) return;
+
+  const params = new URLSearchParams(window.location.search);
+  params.set("q", q);
+  history.replaceState(null, "", `?${params.toString()}`);
+
   searchYouTube(q);
 }
 
@@ -89,7 +104,6 @@ function updateUIAfterAdd(videoId) {
   const col = document.querySelector(`.col-md-4[data-video-id="${videoId}"]`);
   if (!col) return;
 
-  // Badge ✓
   if (!col.querySelector(".badge")) {
     const badge = document.createElement("span");
     badge.className = "badge bg-success position-absolute top-0 end-0 m-2";
@@ -97,7 +111,6 @@ function updateUIAfterAdd(videoId) {
     col.querySelector(".card").appendChild(badge);
   }
 
-  // Disable add button
   const addBtn = col.querySelector(".addBtn");
   if (addBtn) {
     addBtn.disabled = true;
@@ -119,6 +132,8 @@ async function searchYouTube(query) {
 
   const searchData = await fetch(searchUrl).then((r) => r.json());
   const items = (searchData.items || []).filter((i) => i.id?.videoId);
+
+  if (!items.length) return;
 
   const ids = items.map((i) => i.id.videoId).join(",");
   const videosUrl =
@@ -173,14 +188,13 @@ async function searchYouTube(query) {
       </div>
     `;
 
-    // Play
-    col.querySelector(".playBtn").onclick = () => {
-      videoPlayer.src = `https://www.youtube.com/embed/${videoId}`;
-      videoTitle.innerText = title;
-      videoModal.show();
-    };
+    col.querySelector("img").onclick = col.querySelector(".playBtn").onclick =
+      () => {
+        videoPlayer.src = `https://www.youtube.com/embed/${videoId}`;
+        videoTitle.innerText = title;
+        videoModal.show();
+      };
 
-    // Add to playlist
     col.querySelector(".addBtn").onclick = async () => {
       selectedVideo = { videoId, title, thumb };
 
